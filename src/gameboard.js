@@ -1,13 +1,18 @@
 export default class Gameboard {
-    constructor(size){
+    constructor(size) {
         this.size = size
         this.candies = []
     }
 
     popCandies() {
-        function randomInt() {
-            Math.floor(Math.random() * this.size)
+        function randomInt(size) {
+            Math.floor(Math.random() * size)
         }
-        this.candies = [...this.candies, [randomInt(), randomInt()]]
+        this.candies = [...this.candies, [randomInt(this.size), randomInt(this.size)]]
+    }
+
+    // TODO
+    over() {
+        console.log("you've lost")
     }
 }
