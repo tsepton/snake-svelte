@@ -1,8 +1,8 @@
 import { sameList, randomInt } from './utils'
 
 export default class Snake {
-    constructor(x, y, board, speed) {
-        this.head = [x, y]
+    constructor(board, speed) {
+        this.head = [0, 0]
         this.tail = []
         this.gameboard = board
         this.speed = speed
@@ -49,14 +49,20 @@ export default class Snake {
             this.gameboard.popCandies([...this.tail, this.head]);
         }
     }
+    
+    reset() {
+        this.head = [0, 0]
+        this.tail = []
+        this.gameover = false
+        this.gameboard.candies = []
+    }
+    
+    getScore() {
+        return this.tail.length
+    }
 
     // private
     presenceOfFood(pos) {
         return this.gameboard.candies.some(list => sameList(list, pos))
-    }
-
-    resetPosition() {
-        this.head = [0, 0]
-        this.tail = []
     }
 }

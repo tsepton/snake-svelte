@@ -21,14 +21,26 @@
     snake = snake;
   };
 
-  // handling movements
-  document.onkeypress = (e) => {
-    move(e.key);
-    clearInterval(interval);
-    interval = setInterval(() => {
-      move(e.key);
-    }, 1000 / snake.speed);
-  };
+  $: {
+    if (snake.gameover) {
+      document.onkeypress = (e) => {
+        if (e.key === "Enter") {
+          snake.reset();
+          snake = snake;
+        }
+      };
+      clearInterval(interval);
+    } else {
+      // handling movements
+      document.onkeypress = (e) => {
+        move(e.key);
+        clearInterval(interval);
+        interval = setInterval(() => {
+          move(e.key);
+        }, 1000 / snake.speed);
+      };
+    }
+  }
 
   function sameList(list1, list2) {
     return JSON.stringify(list1) === JSON.stringify(list2);
@@ -43,9 +55,22 @@
     height: 100%;
   }
 
+  h1 {
+    padding-top: 100px;
+    width: 100%;
+    font-weight: 400;
+    text-align: center;
+  }
+
   h2 {
     width: 100%;
     font-weight: 200;
+    text-align: center;
+  }
+
+  h3 {
+    width: 100%;
+    font-weight: 100;
     text-align: center;
   }
 
@@ -65,7 +90,9 @@
     background-color: #535865;
   }
 
-  [head="true"], [tail="true"], [candy="true"] {
+  [head="true"],
+  [tail="true"],
+  [candy="true"] {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,7 +115,7 @@
   }
 
   [candy="true"]::after {
-    content: '';
+    content: "";
     border-radius: 30px;
     width: 1.5rem;
     height: 1.5rem;
@@ -97,18 +124,24 @@
 </style>
 
 <h2>Gameboard</h2>
-<div id="gameboard">
-  {#each Array(snake.gameboard.size) as _, x}
-    <div class={'row'}>
-      {#each Array(snake.gameboard.size) as _, y}
-        <div
-          class={`game-square-${(y + x) % 2}`}
-          head={sameList(snake.head, [x, y])}
-          tail={snake.tail.some((list) => sameList(list, [x, y]))}
-          candy={snake.gameboard.candies.some((list) =>
-            sameList(list, [x, y])
-          )} />
-      {/each}
-    </div>
-  {/each}
-</div>
+<h3>Score : {snake.getScore()}</h3>
+{#if snake.gameover}
+  <h1>Gameover !</h1>
+  <h2>Press space to play again</h2>
+{:else}
+  <div id="gameboard">
+    {#each Array(snake.gameboard.size) as _, x}
+      <div class={'row'}>
+        {#each Array(snake.gameboard.size) as _, y}
+          <div
+            class={`game-square-${(y + x) % 2}`}
+            head={sameList(snake.head, [x, y])}
+            tail={snake.tail.some((list) => sameList(list, [x, y]))}
+            candy={snake.gameboard.candies.some((list) =>
+              sameList(list, [x, y])
+            )} />
+        {/each}
+      </div>
+    {/each}
+  </div>
+{/if}
