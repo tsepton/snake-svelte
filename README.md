@@ -1,6 +1,6 @@
 ## snake-svelte
 
-![image-20200925205258595](/home/tsepton/Desktop/snake-js/preview.png)
+![image-20200925205258595](./preview.png)
 
 ### What is this ?
 
