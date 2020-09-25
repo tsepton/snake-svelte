@@ -1,6 +1,5 @@
 <script>
-  //export let snake;
-  export let game;
+  export let snake;
 </script>
 
 <style>
@@ -18,9 +17,12 @@
 <div id="settings">
   <h2>Game Settings</h2>
   <div>
-    <p>Difficulty :</p><input type="number" bind:value={game.difficulty} />
+    <p>Size (5 - 15) :</p><input type="number" bind:value={snake.gameboard.size} />
   </div>
   <div>
-    <p>Size :</p><input type="number" bind:value={game.size} />
+    <p>Speed (1 to 5) :</p><input type="number" bind:value={snake.speed}/>
+  </div>
+  <div>
+    <p>Candy spawn (1 - 100) :</p><input type="number" bind:value={snake.gameboard.candySpawn} />
   </div>
 </div>

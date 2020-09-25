@@ -1,58 +1,62 @@
+import { sameList, randomInt } from './utils'
+
 export default class Snake {
-    constructor(board, x, y) {
-        this.gameboard = board
+    constructor(x, y, board, speed) {
         this.head = [x, y]
         this.tail = []
+        this.gameboard = board
+        this.speed = speed
+        this.gameover = false
     }
 
-    // FIXME - Factorise the 4 following methods
-    left() {
+    move(dir) {
         let x, y
         [x, y] = [...this.head]
-        this.tail.push(this.head)
-        this.head = (x === 0) ? [this.gameboard.size - 1, y] : [x - 1, y]
-        if (this.tail.includes(this.head))
-            this.gameboard.over()
-        if (!this.presenceOfFood())
-            this.tail.pop()
-    }
+        this.tail.unshift(this.head)
 
-    right() {
-        let x, y
-        [x, y] = [...this.head]
-        this.tail.push(this.head)
-        this.head = (x === this.gameboard.size - 1) ? [0, y] : [x + 1, y]
-        this.gameboard.popCandies()
-        if (this.tail.includes(this.head))
-            this.gameboard.over()
-        if (!this.presenceOfFood())
-            this.tail.pop()
-    }
+        // Handling the direction
+        switch (dir) {
+            case 'up':
+                this.head = (y === 0) ? [x, this.gameboard.size - 1] : [x, y - 1]
+                break
+            case 'down':
+                this.head = (y === this.gameboard.size - 1) ? [x, 0] : [x, y + 1]
+                break
+            case 'left':
+                this.head = (x === 0) ? [this.gameboard.size - 1, y] : [x - 1, y]
+                break
+            case 'right':
+                this.head = (x === this.gameboard.size - 1) ? [0, y] : [x + 1, y]
+                break
+            default:
+                throw ("Unknown direction")
+        }
 
-    up() {
-        let x, y
-        [x, y] = [...this.head]
-        this.tail.push(this.head)
-        this.head = (y === 0) ? [x, this.gameboard.size - 1] : [x, y - 1]
-        if (this.tail.includes(this.head))
-            this.gameboard.over()
-        if (!this.presenceOfFood())
-            this.tail.pop()
-    }
+        if (this.tail.some(list => sameList(list, this.head))){
+            this.gameover = true
+        }
 
-    down() {
-        let x, y
-        [x, y] = [...this.head]
-        this.tail.push(this.head)
-        this.head = (y === this.gameboard.size - 1) ? [x, 0] : [x, y + 1]
-        if (this.tail.includes(this.head))
-            this.gameboard.over()
-        if (!this.presenceOfFood())
+        if (!this.presenceOfFood(this.head))
             this.tail.pop()
+        else {
+            const index = this.gameboard.candies.findIndex(list => sameList(list, this.head))
+            if (index > -1) {
+                this.gameboard.candies.splice(index, 1)
+            }
+        }
+
+        if (randomInt(100) <= this.gameboard.candySpawn) {
+            this.gameboard.popCandies([...this.tail, this.head]);
+        }
     }
 
     // private
-    presenceOfFood() {
-        return this.gameboard.candies.includes(this.head)
+    presenceOfFood(pos) {
+        return this.gameboard.candies.some(list => sameList(list, pos))
+    }
+
+    resetPosition() {
+        this.head = [0, 0]
+        this.tail = []
     }
 }

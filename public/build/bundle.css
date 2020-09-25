@@ -1,9 +1,5 @@
-#screen.svelte-kjbsnf{display:grid;align-items:center;width:100%;height:100%;grid-gap:1rem;grid-template-columns:1fr 5fr}#settings.svelte-kjbsnf{height:100%;width:100%;background-color:#f5f5f5}#gameboard.svelte-kjbsnf{height:100%;width:100%;background-color:#ffff}
+#screen.svelte-1ri90ij{display:grid;align-items:center;width:100%;height:100%;grid-gap:1rem;grid-template-columns:1fr 5fr;overflow:hidden}#settings.svelte-1ri90ij{height:100vh;width:100%;background-color:#f5f5f5}#gameboard.svelte-1ri90ij{height:100vh;width:100%;background-color:#ffff}
 #gameboard.svelte-ccisia{display:flex;justify-content:center;width:100%;height:100%}h2.svelte-ccisia{width:100%;font-weight:200;text-align:center}.row.svelte-ccisia{flex-direction:column}.game-square-0.svelte-ccisia{width:3rem;height:3rem;background-color:#40444f}.game-square-1.svelte-ccisia{width:3rem;height:3rem;background-color:#535865}[head="true"].svelte-ccisia{background-color:#3bb273;border-radius:30px}[tail="true"].svelte-ccisia{background-color:#66cc96}[candy="true"].svelte-ccisia{background-color:#c45baa}
 #settings.svelte-12xc8md{width:100%;height:min-content;text-align:center}h2.svelte-12xc8md{font-weight:100}
-#gameboard.svelte-hzjb7p{display:flex;justify-content:center;border:2px solid red}.row.svelte-hzjb7p{flex-direction:column}.game-square.svelte-hzjb7p{margin:1px;width:5em;height:5em;background-color:beige}[head="true"].svelte-hzjb7p{background-color:blue;border-radius:30px}[tail="true"].svelte-hzjb7p{background-color:red}[candy="true"].svelte-hzjb7p{background-color:rosybrown}
-#gameboard.svelte-1q7nbeg{display:flex;justify-content:center;width:min-content
-  }.row.svelte-1q7nbeg{flex-direction:column}.game-square.svelte-1q7nbeg{margin:1px;width:5em;height:5em;background-color:beige}[head="true"].svelte-1q7nbeg{background-color:blue;border-radius:30px}[tail="true"].svelte-1q7nbeg{background-color:red}[candy="true"].svelte-1q7nbeg{background-color:rosybrown}
-#settings.svelte-cj0n09{width:min-content;border:2px solid red;height:100%}h2.svelte-cj0n09{font-weight:100}
 
 /*# sourceMappingURL=bundle.css.map */

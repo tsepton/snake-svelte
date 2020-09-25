@@ -362,83 +362,89 @@ var app = (function () {
         $inject_state() { }
     }
 
+    function sameList(list1, list2) {
+        return JSON.stringify(list1) === JSON.stringify(list2);
+    }
+
+    function randomInt(max) {
+        return Math.floor(Math.random() * max)
+    }
+
     class Gameboard {
-        constructor(size, difficulty) {
+        constructor(size, spawn) {
             this.size = size;
             this.candies = [];
-            this.difficulty = difficulty;
+            this.candySpawn = spawn;
         }
 
-        popCandies() {
-            function randomInt(size) {
-                return Math.floor(Math.random() * size)
-            }
-            // TODO : Do not let candies appear on the snake body
-            this.candies = [...this.candies, [randomInt(this.size), randomInt(this.size)]];
-        }
-
-        // TODO
-        over() {
-            console.log("you've lost");
+        popCandies(exclusions) {
+            exclusions = [...exclusions, ...this.candies]; 
+            let pos;
+            do {
+                pos = [randomInt(this.size), randomInt(this.size)];
+            } while (exclusions.some(list => sameList(list, pos)))
+            this.candies = [...this.candies, pos];
         }
     }
 
     class Snake {
-        constructor(board, x, y) {
-            this.gameboard = board;
+        constructor(x, y, board, speed) {
             this.head = [x, y];
             this.tail = [];
+            this.gameboard = board;
+            this.speed = speed;
+            this.gameover = false;
         }
 
-        // FIXME - Factorise the 4 following methods
-        left() {
+        move(dir) {
             let x, y;
             [x, y] = [...this.head];
-            this.tail.push(this.head);
-            this.head = (x === 0) ? [this.gameboard.size - 1, y] : [x - 1, y];
-            if (this.tail.includes(this.head))
-                this.gameboard.over();
-            if (!this.presenceOfFood())
-                this.tail.pop();
-        }
+            this.tail.unshift(this.head);
 
-        right() {
-            let x, y;
-            [x, y] = [...this.head];
-            this.tail.push(this.head);
-            this.head = (x === this.gameboard.size - 1) ? [0, y] : [x + 1, y];
-            this.gameboard.popCandies();
-            if (this.tail.includes(this.head))
-                this.gameboard.over();
-            if (!this.presenceOfFood())
-                this.tail.pop();
-        }
+            // Handling the direction
+            switch (dir) {
+                case 'up':
+                    this.head = (y === 0) ? [x, this.gameboard.size - 1] : [x, y - 1];
+                    break
+                case 'down':
+                    this.head = (y === this.gameboard.size - 1) ? [x, 0] : [x, y + 1];
+                    break
+                case 'left':
+                    this.head = (x === 0) ? [this.gameboard.size - 1, y] : [x - 1, y];
+                    break
+                case 'right':
+                    this.head = (x === this.gameboard.size - 1) ? [0, y] : [x + 1, y];
+                    break
+                default:
+                    throw ("Unknown direction")
+            }
 
-        up() {
-            let x, y;
-            [x, y] = [...this.head];
-            this.tail.push(this.head);
-            this.head = (y === 0) ? [x, this.gameboard.size - 1] : [x, y - 1];
-            if (this.tail.includes(this.head))
-                this.gameboard.over();
-            if (!this.presenceOfFood())
-                this.tail.pop();
-        }
+            if (this.tail.some(list => sameList(list, this.head))){
+                this.gameover = true;
+            }
 
-        down() {
-            let x, y;
-            [x, y] = [...this.head];
-            this.tail.push(this.head);
-            this.head = (y === this.gameboard.size - 1) ? [x, 0] : [x, y + 1];
-            if (this.tail.includes(this.head))
-                this.gameboard.over();
-            if (!this.presenceOfFood())
+            if (!this.presenceOfFood(this.head))
                 this.tail.pop();
+            else {
+                const index = this.gameboard.candies.findIndex(list => sameList(list, this.head));
+                if (index > -1) {
+                    this.gameboard.candies.splice(index, 1);
+                }
+            }
+
+            if (randomInt(100) <= this.gameboard.candySpawn) {
+                this.gameboard.popCandies([...this.tail, this.head]);
+            }
         }
 
         // private
-        presenceOfFood() {
-            return this.gameboard.candies.includes(this.head)
+        presenceOfFood(pos) {
+            return this.gameboard.candies.some(list => sameList(list, pos))
+        }
+
+        resetPosition() {
+            this.head = [0, 0];
+            this.tail = [];
         }
     }
 
@@ -447,7 +453,7 @@ var app = (function () {
     const file = "src/Components/Settings.svelte";
 
     function create_fragment(ctx) {
-    	let div2;
+    	let div3;
     	let h2;
     	let t1;
     	let div0;
@@ -457,77 +463,100 @@ var app = (function () {
     	let div1;
     	let p1;
     	let input1;
+    	let t5;
+    	let div2;
+    	let p2;
+    	let input2;
     	let mounted;
     	let dispose;
 
     	const block = {
     		c: function create() {
-    			div2 = element("div");
+    			div3 = element("div");
     			h2 = element("h2");
     			h2.textContent = "Game Settings";
     			t1 = space();
     			div0 = element("div");
     			p0 = element("p");
-    			p0.textContent = "Difficulty :";
+    			p0.textContent = "Size (5 - 15) :";
     			input0 = element("input");
     			t3 = space();
     			div1 = element("div");
     			p1 = element("p");
-    			p1.textContent = "Size :";
+    			p1.textContent = "Speed (1 to 5) :";
     			input1 = element("input");
+    			t5 = space();
+    			div2 = element("div");
+    			p2 = element("p");
+    			p2.textContent = "Candy spawn (1 - 100) :";
+    			input2 = element("input");
     			attr_dev(h2, "class", "svelte-12xc8md");
-    			add_location(h2, file, 18, 2, 219);
-    			add_location(p0, file, 20, 4, 254);
+    			add_location(h2, file, 17, 2, 198);
+    			add_location(p0, file, 19, 4, 233);
     			attr_dev(input0, "type", "number");
-    			add_location(input0, file, 20, 23, 273);
-    			add_location(div0, file, 19, 2, 244);
-    			add_location(p1, file, 23, 4, 347);
+    			add_location(input0, file, 19, 26, 255);
+    			add_location(div0, file, 18, 2, 223);
+    			add_location(p1, file, 22, 4, 334);
     			attr_dev(input1, "type", "number");
-    			add_location(input1, file, 23, 17, 360);
-    			add_location(div1, file, 22, 2, 337);
-    			attr_dev(div2, "id", "settings");
-    			attr_dev(div2, "class", "svelte-12xc8md");
-    			add_location(div2, file, 17, 0, 197);
+    			add_location(input1, file, 22, 27, 357);
+    			add_location(div1, file, 21, 2, 324);
+    			add_location(p2, file, 25, 4, 426);
+    			attr_dev(input2, "type", "number");
+    			add_location(input2, file, 25, 34, 456);
+    			add_location(div2, file, 24, 2, 416);
+    			attr_dev(div3, "id", "settings");
+    			attr_dev(div3, "class", "svelte-12xc8md");
+    			add_location(div3, file, 16, 0, 176);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div2, anchor);
-    			append_dev(div2, h2);
-    			append_dev(div2, t1);
-    			append_dev(div2, div0);
+    			insert_dev(target, div3, anchor);
+    			append_dev(div3, h2);
+    			append_dev(div3, t1);
+    			append_dev(div3, div0);
     			append_dev(div0, p0);
     			append_dev(div0, input0);
-    			set_input_value(input0, /*game*/ ctx[0].difficulty);
-    			append_dev(div2, t3);
-    			append_dev(div2, div1);
+    			set_input_value(input0, /*snake*/ ctx[0].gameboard.size);
+    			append_dev(div3, t3);
+    			append_dev(div3, div1);
     			append_dev(div1, p1);
     			append_dev(div1, input1);
-    			set_input_value(input1, /*game*/ ctx[0].size);
+    			set_input_value(input1, /*snake*/ ctx[0].speed);
+    			append_dev(div3, t5);
+    			append_dev(div3, div2);
+    			append_dev(div2, p2);
+    			append_dev(div2, input2);
+    			set_input_value(input2, /*snake*/ ctx[0].gameboard.candySpawn);
 
     			if (!mounted) {
     				dispose = [
     					listen_dev(input0, "input", /*input0_input_handler*/ ctx[1]),
-    					listen_dev(input1, "input", /*input1_input_handler*/ ctx[2])
+    					listen_dev(input1, "input", /*input1_input_handler*/ ctx[2]),
+    					listen_dev(input2, "input", /*input2_input_handler*/ ctx[3])
     				];
 
     				mounted = true;
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*game*/ 1 && to_number(input0.value) !== /*game*/ ctx[0].difficulty) {
-    				set_input_value(input0, /*game*/ ctx[0].difficulty);
+    			if (dirty & /*snake*/ 1 && to_number(input0.value) !== /*snake*/ ctx[0].gameboard.size) {
+    				set_input_value(input0, /*snake*/ ctx[0].gameboard.size);
     			}
 
-    			if (dirty & /*game*/ 1 && to_number(input1.value) !== /*game*/ ctx[0].size) {
-    				set_input_value(input1, /*game*/ ctx[0].size);
+    			if (dirty & /*snake*/ 1 && to_number(input1.value) !== /*snake*/ ctx[0].speed) {
+    				set_input_value(input1, /*snake*/ ctx[0].speed);
+    			}
+
+    			if (dirty & /*snake*/ 1 && to_number(input2.value) !== /*snake*/ ctx[0].gameboard.candySpawn) {
+    				set_input_value(input2, /*snake*/ ctx[0].gameboard.candySpawn);
     			}
     		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div2);
+    			if (detaching) detach_dev(div3);
     			mounted = false;
     			run_all(dispose);
     		}
@@ -547,44 +576,49 @@ var app = (function () {
     function instance($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("Settings", slots, []);
-    	let { game } = $$props;
-    	const writable_props = ["game"];
+    	let { snake } = $$props;
+    	const writable_props = ["snake"];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Settings> was created with unknown prop '${key}'`);
     	});
 
     	function input0_input_handler() {
-    		game.difficulty = to_number(this.value);
-    		$$invalidate(0, game);
+    		snake.gameboard.size = to_number(this.value);
+    		$$invalidate(0, snake);
     	}
 
     	function input1_input_handler() {
-    		game.size = to_number(this.value);
-    		$$invalidate(0, game);
+    		snake.speed = to_number(this.value);
+    		$$invalidate(0, snake);
+    	}
+
+    	function input2_input_handler() {
+    		snake.gameboard.candySpawn = to_number(this.value);
+    		$$invalidate(0, snake);
     	}
 
     	$$self.$$set = $$props => {
-    		if ("game" in $$props) $$invalidate(0, game = $$props.game);
+    		if ("snake" in $$props) $$invalidate(0, snake = $$props.snake);
     	};
 
-    	$$self.$capture_state = () => ({ game });
+    	$$self.$capture_state = () => ({ snake });
 
     	$$self.$inject_state = $$props => {
-    		if ("game" in $$props) $$invalidate(0, game = $$props.game);
+    		if ("snake" in $$props) $$invalidate(0, snake = $$props.snake);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [game, input0_input_handler, input1_input_handler];
+    	return [snake, input0_input_handler, input1_input_handler, input2_input_handler];
     }
 
     class Settings extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance, create_fragment, safe_not_equal, { game: 0 });
+    		init(this, options, instance, create_fragment, safe_not_equal, { snake: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -596,16 +630,16 @@ var app = (function () {
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
-    		if (/*game*/ ctx[0] === undefined && !("game" in props)) {
-    			console.warn("<Settings> was created without expected prop 'game'");
+    		if (/*snake*/ ctx[0] === undefined && !("snake" in props)) {
+    			console.warn("<Settings> was created without expected prop 'snake'");
     		}
     	}
 
-    	get game() {
+    	get snake() {
     		throw new Error("<Settings>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
-    	set game(value) {
+    	set snake(value) {
     		throw new Error("<Settings>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
@@ -628,7 +662,7 @@ var app = (function () {
     	return child_ctx;
     }
 
-    // (85:6) {#each Array(game.size) as _, y}
+    // (86:6) {#each Array(snake.gameboard.size) as _, y}
     function create_each_block_1(ctx) {
     	let div;
     	let div_class_value;
@@ -636,28 +670,38 @@ var app = (function () {
     	let div_tail_value;
     	let div_candy_value;
 
+    	function func(...args) {
+    		return /*func*/ ctx[1](/*x*/ ctx[7], /*y*/ ctx[9], ...args);
+    	}
+
+    	function func_1(...args) {
+    		return /*func_1*/ ctx[2](/*x*/ ctx[7], /*y*/ ctx[9], ...args);
+    	}
+
     	const block = {
     		c: function create() {
     			div = element("div");
     			attr_dev(div, "class", div_class_value = "" + (null_to_empty(`game-square-${(/*y*/ ctx[9] + /*x*/ ctx[7]) % 2}`) + " svelte-ccisia"));
-    			attr_dev(div, "head", div_head_value = JSON.stringify(/*snake*/ ctx[0].head) === JSON.stringify([/*x*/ ctx[7], /*y*/ ctx[9]]));
-    			attr_dev(div, "tail", div_tail_value = /*snake*/ ctx[0].tail.includes([/*x*/ ctx[7], /*y*/ ctx[9]]));
-    			attr_dev(div, "candy", div_candy_value = /*game*/ ctx[1].candies.includes([/*x*/ ctx[7], /*y*/ ctx[9]]));
-    			add_location(div, file$1, 85, 8, 1389);
+    			attr_dev(div, "head", div_head_value = sameList$1(/*snake*/ ctx[0].head, [/*x*/ ctx[7], /*y*/ ctx[9]]));
+    			attr_dev(div, "tail", div_tail_value = /*snake*/ ctx[0].tail.some(func));
+    			attr_dev(div, "candy", div_candy_value = /*snake*/ ctx[0].gameboard.candies.some(func_1));
+    			add_location(div, file$1, 86, 8, 1491);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
     		},
-    		p: function update(ctx, dirty) {
-    			if (dirty & /*snake*/ 1 && div_head_value !== (div_head_value = JSON.stringify(/*snake*/ ctx[0].head) === JSON.stringify([/*x*/ ctx[7], /*y*/ ctx[9]]))) {
+    		p: function update(new_ctx, dirty) {
+    			ctx = new_ctx;
+
+    			if (dirty & /*snake*/ 1 && div_head_value !== (div_head_value = sameList$1(/*snake*/ ctx[0].head, [/*x*/ ctx[7], /*y*/ ctx[9]]))) {
     				attr_dev(div, "head", div_head_value);
     			}
 
-    			if (dirty & /*snake*/ 1 && div_tail_value !== (div_tail_value = /*snake*/ ctx[0].tail.includes([/*x*/ ctx[7], /*y*/ ctx[9]]))) {
+    			if (dirty & /*snake*/ 1 && div_tail_value !== (div_tail_value = /*snake*/ ctx[0].tail.some(func))) {
     				attr_dev(div, "tail", div_tail_value);
     			}
 
-    			if (dirty & /*game*/ 2 && div_candy_value !== (div_candy_value = /*game*/ ctx[1].candies.includes([/*x*/ ctx[7], /*y*/ ctx[9]]))) {
+    			if (dirty & /*snake*/ 1 && div_candy_value !== (div_candy_value = /*snake*/ ctx[0].gameboard.candies.some(func_1))) {
     				attr_dev(div, "candy", div_candy_value);
     			}
     		},
@@ -670,19 +714,19 @@ var app = (function () {
     		block,
     		id: create_each_block_1.name,
     		type: "each",
-    		source: "(85:6) {#each Array(game.size) as _, y}",
+    		source: "(86:6) {#each Array(snake.gameboard.size) as _, y}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (83:2) {#each Array(game.size) as _, x}
+    // (84:2) {#each Array(snake.gameboard.size) as _, x}
     function create_each_block(ctx) {
     	let div;
     	let t;
     	let div_class_value;
-    	let each_value_1 = Array(/*game*/ ctx[1].size);
+    	let each_value_1 = Array(/*snake*/ ctx[0].gameboard.size);
     	validate_each_argument(each_value_1);
     	let each_blocks = [];
 
@@ -700,7 +744,7 @@ var app = (function () {
 
     			t = space();
     			attr_dev(div, "class", div_class_value = "" + (null_to_empty("row") + " svelte-ccisia"));
-    			add_location(div, file$1, 83, 4, 1322);
+    			add_location(div, file$1, 84, 4, 1413);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -712,8 +756,8 @@ var app = (function () {
     			append_dev(div, t);
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*JSON, snake, game*/ 3) {
-    				each_value_1 = Array(/*game*/ ctx[1].size);
+    			if (dirty & /*sameList, snake*/ 1) {
+    				each_value_1 = Array(/*snake*/ ctx[0].gameboard.size);
     				validate_each_argument(each_value_1);
     				let i;
 
@@ -746,7 +790,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(83:2) {#each Array(game.size) as _, x}",
+    		source: "(84:2) {#each Array(snake.gameboard.size) as _, x}",
     		ctx
     	});
 
@@ -757,7 +801,7 @@ var app = (function () {
     	let h2;
     	let t1;
     	let div;
-    	let each_value = Array(/*game*/ ctx[1].size);
+    	let each_value = Array(/*snake*/ ctx[0].gameboard.size);
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -777,10 +821,10 @@ var app = (function () {
     			}
 
     			attr_dev(h2, "class", "svelte-ccisia");
-    			add_location(h2, file$1, 80, 0, 1243);
+    			add_location(h2, file$1, 81, 0, 1323);
     			attr_dev(div, "id", "gameboard");
     			attr_dev(div, "class", "svelte-ccisia");
-    			add_location(div, file$1, 81, 0, 1262);
+    			add_location(div, file$1, 82, 0, 1342);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -795,8 +839,8 @@ var app = (function () {
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*Array, game, JSON, snake*/ 3) {
-    				each_value = Array(/*game*/ ctx[1].size);
+    			if (dirty & /*Array, snake, sameList*/ 1) {
+    				each_value = Array(/*snake*/ ctx[0].gameboard.size);
     				validate_each_argument(each_value);
     				let i;
 
@@ -840,27 +884,29 @@ var app = (function () {
     	return block;
     }
 
+    function sameList$1(list1, list2) {
+    	return JSON.stringify(list1) === JSON.stringify(list2);
+    }
+
     function instance$1($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("Gameboard", slots, []);
     	let { snake } = $$props;
-    	let { game } = $$props;
-    	let keyPressed;
     	let interval;
 
-    	let move = () => {
+    	let move = keyPressed => {
     		switch (keyPressed) {
     			case "z":
-    				snake.up();
+    				snake.move("up");
     				break;
     			case "s":
-    				snake.down();
+    				snake.move("down");
     				break;
     			case "q":
-    				snake.left();
+    				snake.move("left");
     				break;
     			case "d":
-    				snake.right();
+    				snake.move("right");
     				break;
     		}
 
@@ -870,35 +916,34 @@ var app = (function () {
 
     	// handling movements
     	document.onkeypress = e => {
-    		keyPressed = e.key;
-    		move();
+    		move(e.key);
     		clearInterval(interval);
 
     		interval = setInterval(
     			() => {
-    				move();
+    				move(e.key);
     			},
-    			1000 / game.difficulty
+    			1000 / snake.speed
     		);
     	};
 
-    	const writable_props = ["snake", "game"];
+    	const writable_props = ["snake"];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Gameboard> was created with unknown prop '${key}'`);
     	});
 
+    	const func = (x, y, list) => sameList$1(list, [x, y]);
+    	const func_1 = (x, y, list) => sameList$1(list, [x, y]);
+
     	$$self.$$set = $$props => {
     		if ("snake" in $$props) $$invalidate(0, snake = $$props.snake);
-    		if ("game" in $$props) $$invalidate(1, game = $$props.game);
     	};
 
-    	$$self.$capture_state = () => ({ snake, game, keyPressed, interval, move });
+    	$$self.$capture_state = () => ({ snake, interval, move, sameList: sameList$1 });
 
     	$$self.$inject_state = $$props => {
     		if ("snake" in $$props) $$invalidate(0, snake = $$props.snake);
-    		if ("game" in $$props) $$invalidate(1, game = $$props.game);
-    		if ("keyPressed" in $$props) keyPressed = $$props.keyPressed;
     		if ("interval" in $$props) interval = $$props.interval;
     		if ("move" in $$props) move = $$props.move;
     	};
@@ -907,13 +952,13 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [snake, game];
+    	return [snake, func, func_1];
     }
 
     class Gameboard$1 extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$1, create_fragment$1, safe_not_equal, { snake: 0, game: 1 });
+    		init(this, options, instance$1, create_fragment$1, safe_not_equal, { snake: 0 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -928,10 +973,6 @@ var app = (function () {
     		if (/*snake*/ ctx[0] === undefined && !("snake" in props)) {
     			console.warn("<Gameboard> was created without expected prop 'snake'");
     		}
-
-    		if (/*game*/ ctx[1] === undefined && !("game" in props)) {
-    			console.warn("<Gameboard> was created without expected prop 'game'");
-    		}
     	}
 
     	get snake() {
@@ -941,70 +982,95 @@ var app = (function () {
     	set snake(value) {
     		throw new Error("<Gameboard>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
-
-    	get game() {
-    		throw new Error("<Gameboard>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set game(value) {
-    		throw new Error("<Gameboard>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
     }
 
     /* src/App.svelte generated by Svelte v3.26.0 */
     const file$2 = "src/App.svelte";
 
+    // (41:0) {#if snake.over}
+    function create_if_block(ctx) {
+    	let div;
+    	let span;
+
+    	const block = {
+    		c: function create() {
+    			div = element("div");
+    			span = element("span");
+    			span.textContent = "Gameover";
+    			add_location(span, file$2, 42, 2, 737);
+    			add_location(div, file$2, 41, 0, 729);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div, anchor);
+    			append_dev(div, span);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block.name,
+    		type: "if",
+    		source: "(41:0) {#if snake.over}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
     function create_fragment$2(ctx) {
+    	let t0;
     	let div2;
     	let div0;
     	let settings;
-    	let t;
+    	let t1;
     	let div1;
     	let gameboard;
     	let current;
+    	let if_block = /*snake*/ ctx[0].over && create_if_block(ctx);
 
     	settings = new Settings({
-    			props: {
-    				snake: /*snake*/ ctx[1],
-    				game: /*game*/ ctx[0]
-    			},
+    			props: { snake: /*snake*/ ctx[0] },
     			$$inline: true
     		});
 
     	gameboard = new Gameboard$1({
-    			props: {
-    				snake: /*snake*/ ctx[1],
-    				game: /*game*/ ctx[0]
-    			},
+    			props: { snake: /*snake*/ ctx[0] },
     			$$inline: true
     		});
 
     	const block = {
     		c: function create() {
+    			if (if_block) if_block.c();
+    			t0 = space();
     			div2 = element("div");
     			div0 = element("div");
     			create_component(settings.$$.fragment);
-    			t = space();
+    			t1 = space();
     			div1 = element("div");
     			create_component(gameboard.$$.fragment);
     			attr_dev(div0, "id", "settings");
-    			attr_dev(div0, "class", "svelte-kjbsnf");
-    			add_location(div0, file$2, 34, 2, 618);
+    			attr_dev(div0, "class", "svelte-1ri90ij");
+    			add_location(div0, file$2, 46, 2, 792);
     			attr_dev(div1, "id", "gameboard");
-    			attr_dev(div1, "class", "svelte-kjbsnf");
-    			add_location(div1, file$2, 37, 2, 681);
+    			attr_dev(div1, "class", "svelte-1ri90ij");
+    			add_location(div1, file$2, 49, 2, 848);
     			attr_dev(div2, "id", "screen");
-    			attr_dev(div2, "class", "svelte-kjbsnf");
-    			add_location(div2, file$2, 33, 0, 598);
+    			attr_dev(div2, "class", "svelte-1ri90ij");
+    			add_location(div2, file$2, 45, 0, 772);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
+    			if (if_block) if_block.m(target, anchor);
+    			insert_dev(target, t0, anchor);
     			insert_dev(target, div2, anchor);
     			append_dev(div2, div0);
     			mount_component(settings, div0, null);
-    			append_dev(div2, t);
+    			append_dev(div2, t1);
     			append_dev(div2, div1);
     			mount_component(gameboard, div1, null);
     			current = true;
@@ -1022,6 +1088,8 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
+    			if (if_block) if_block.d(detaching);
+    			if (detaching) detach_dev(t0);
     			if (detaching) detach_dev(div2);
     			destroy_component(settings);
     			destroy_component(gameboard);
@@ -1042,8 +1110,8 @@ var app = (function () {
     function instance$2($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("App", slots, []);
-    	let game = new Gameboard(10, 1);
-    	let snake = new Snake(game, 0, 0);
+    	let game = new Gameboard(10, 5);
+    	let snake = new Snake(0, 0, game, 2);
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -1060,15 +1128,15 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("game" in $$props) $$invalidate(0, game = $$props.game);
-    		if ("snake" in $$props) $$invalidate(1, snake = $$props.snake);
+    		if ("game" in $$props) game = $$props.game;
+    		if ("snake" in $$props) $$invalidate(0, snake = $$props.snake);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [game, snake];
+    	return [snake];
     }
 
     class App extends SvelteComponentDev {

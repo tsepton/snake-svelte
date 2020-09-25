@@ -1,22 +1,20 @@
 <script>
   export let snake;
-  export let game;
 
-  let keyPressed;
   let interval;
-  let move = () => {
+  let move = (keyPressed) => {
     switch (keyPressed) {
       case "z":
-        snake.up();
+        snake.move("up");
         break;
       case "s":
-        snake.down();
+        snake.move("down");
         break;
       case "q":
-        snake.left();
+        snake.move("left");
         break;
       case "d":
-        snake.right();
+        snake.move("right");
         break;
     }
     // svelte only renders new assignements...
@@ -25,13 +23,16 @@
 
   // handling movements
   document.onkeypress = (e) => {
-    keyPressed = e.key;
-    move();
+    move(e.key);
     clearInterval(interval);
     interval = setInterval(() => {
-      move();
-    }, 1000 / game.difficulty);
+      move(e.key);
+    }, 1000 / snake.speed);
   };
+
+  function sameList(list1, list2) {
+    return JSON.stringify(list1) === JSON.stringify(list2);
+  }
 </script>
 
 <style>
@@ -80,14 +81,16 @@
 
 <h2>Gameboard</h2>
 <div id="gameboard">
-  {#each Array(game.size) as _, x}
+  {#each Array(snake.gameboard.size) as _, x}
     <div class={'row'}>
-      {#each Array(game.size) as _, y}
+      {#each Array(snake.gameboard.size) as _, y}
         <div
           class={`game-square-${(y + x) % 2}`}
-          head={JSON.stringify(snake.head) === JSON.stringify([x, y])}
-          tail={snake.tail.includes([x, y])}
-          candy={game.candies.includes([x, y])} />
+          head={sameList(snake.head, [x, y])}
+          tail={snake.tail.some((list) => sameList(list, [x, y]))}
+          candy={snake.gameboard.candies.some((list) =>
+            sameList(list, [x, y])
+          )} />
       {/each}
     </div>
   {/each}
