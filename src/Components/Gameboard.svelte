@@ -127,7 +127,7 @@
 <h3>Score : {snake.getScore()}</h3>
 {#if snake.gameover}
   <h1>Gameover !</h1>
-  <h2>Press space to play again</h2>
+  <h2>Press 'Enter' to play again</h2>
 {:else}
   <div id="gameboard">
     {#each Array(snake.gameboard.size) as _, x}
