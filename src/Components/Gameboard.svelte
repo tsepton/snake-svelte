@@ -65,16 +65,33 @@
     background-color: #535865;
   }
 
-  [head="true"] {
-    background-color: #3bb273;
-    border-radius: 30px;
+  [head="true"], [tail="true"], [candy="true"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  [tail="true"] {
+  [head="true"]::after {
+    content: "";
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 30px;
+    background-color: #3bb273;
+  }
+
+  [tail="true"]::after {
+    content: "";
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 30px;
     background-color: #66cc96;
   }
 
-  [candy="true"] {
+  [candy="true"]::after {
+    content: '';
+    border-radius: 30px;
+    width: 1.5rem;
+    height: 1.5rem;
     background-color: #c45baa;
   }
 </style>
